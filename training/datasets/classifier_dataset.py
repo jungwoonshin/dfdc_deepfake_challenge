@@ -9,7 +9,8 @@ import numpy as np
 import pandas as pd
 import skimage.draw
 from albumentations import ImageCompression, OneOf, GaussianBlur, Blur
-from albumentations.augmentations.functional import image_compression, rot90
+# from albumentations.augmentations.functional import image_compression, rot90
+from albumentations.augmentations.geometric.functional import rot90
 from albumentations.pytorch.functional import img_to_tensor
 from scipy.ndimage import binary_erosion, binary_dilation
 from skimage import measure
@@ -92,6 +93,8 @@ def dist(p1, p2):
 def remove_eyes(image, landmarks):
     image = image.copy()
     (x1, y1), (x2, y2) = landmarks[:2]
+    # x1, y1 = int(x1), int(y1)
+    # x2, y2 = int(x2), int(y2)
     mask = np.zeros_like(image[..., 0])
     line = cv2.line(mask, (x1, y1), (x2, y2), color=(1), thickness=2)
     w = dist((x1, y1), (x2, y2))
@@ -105,6 +108,7 @@ def remove_nose(image, landmarks):
     image = image.copy()
     (x1, y1), (x2, y2) = landmarks[:2]
     x3, y3 = landmarks[2]
+    # x3, y3 = int(x3), int(y3)
     mask = np.zeros_like(image[..., 0])
     x4 = int((x1 + x2) / 2)
     y4 = int((y1 + y2) / 2)
@@ -261,9 +265,10 @@ class DeepFakeClassifierDataset(Dataset):
                 mask = np.zeros(image.shape[:2], dtype=np.uint8)
                 diff_path = os.path.join(self.data_root, "diffs", video, img_file[:-4] + "_diff.png")
                 try:
-                    msk = cv2.imread(diff_path, cv2.IMREAD_GRAYSCALE)
-                    if msk is not None:
-                        mask = msk
+                    if os.path.isfile(diff_path):
+                        msk = cv2.imread(diff_path, cv2.IMREAD_GRAYSCALE)
+                        if msk is not None:
+                            mask = msk
                 except:
                     print("not found mask", diff_path)
                     pass

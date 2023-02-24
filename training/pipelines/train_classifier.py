@@ -6,6 +6,11 @@ from collections import defaultdict
 from sklearn.metrics import log_loss
 from torch import topk
 
+import os, sys
+root_folder = os.path.abspath(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+sys.path.append(root_folder)
 from training import losses
 from training.datasets.classifier_dataset import DeepFakeClassifierDataset
 from training.losses import WeightedLosses
@@ -71,15 +76,19 @@ def create_val_transforms(size=300):
 def main():
     parser = argparse.ArgumentParser("PyTorch Xview Pipeline")
     arg = parser.add_argument
-    arg('--config', metavar='CONFIG_FILE', help='path to configuration file')
+#     python -u -m torch.distributed.launch --nproc_per_node=$NUM_GPUS --master_port 9901 training/pipelines/train_classifier.py \
+#  --distributed --config configs/b7.json --freeze-epochs 0 --test_every 1 --opt-level O1 --label-smoothing 0.01 --folds-csv folds.csv   --fold 0 --seed 111 --data-dir $ROOT_DIR --prefix b7_111_ > logs/b7_111
+    
+    arg('--config', metavar='CONFIG_FILE', help='path to configuration file', default='configs/b7.json')
     arg('--workers', type=int, default=6, help='number of cpu threads to use')
     arg('--gpu', type=str, default='0', help='List of GPUs for parallel training, e.g. 0,1,2,3')
     arg('--output-dir', type=str, default='weights/')
     arg('--resume', type=str, default='')
-    arg('--fold', type=int, default=0)
+    arg('--fold', type=int, default=1)
+    arg('--val_fold', type=int, default=0)
     arg('--prefix', type=str, default='classifier_')
-    arg('--data-dir', type=str, default="/mnt/sota/datasets/deepfake")
-    arg('--folds-csv', type=str, default='folds.csv')
+    arg('--data-dir', type=str, default="/home/jungwoon/github/dfdc_deepfake_challenge/dataset")
+    arg('--folds-csv', type=str, default='folds02.csv')
     arg('--crops-dir', type=str, default='crops')
     arg('--label-smoothing', type=float, default=0.01)
     arg('--logdir', type=str, default='logs')
@@ -141,7 +150,7 @@ def main():
                                            transforms=create_train_transforms(conf["size"]),
                                            normalize=conf.get("normalize", None))
     data_val = DeepFakeClassifierDataset(mode="val",
-                                         fold=args.fold,
+                                         fold=args.val_fold,
                                          padding_part=args.padding_part,
                                          crops_dir=args.crops_dir,
                                          data_path=args.data_dir,
@@ -227,6 +236,12 @@ def main():
         current_epoch += 1
 
 
+def threshold(x):
+    if x >= 0.5:
+        return 1.0
+    else:
+        return 0.0
+    
 def evaluate_val(args, data_val, bce_best, model, snapshot_name, current_epoch, summary_writer):
     print("Test phase")
     model = model.eval()
@@ -245,6 +260,16 @@ def evaluate_val(args, data_val, bce_best, model, snapshot_name, current_epoch, 
             bce_best = bce
             with open("predictions_{}.json".format(args.fold), "w") as f:
                 json.dump({"probs": probs, "targets": targets}, f)
+            from sklearn.metrics import accuracy_score
+            probs = [item for sublist in probs.values() for item in sublist]
+            probs = [item for sublist in probs for item in sublist]
+            predicts = list(map(threshold, probs))
+            targets = [item for sublist in targets.values() for item in sublist]
+            targets = [item for sublist in targets for item in sublist]
+            accuracy = accuracy_score(targets, predicts)
+            summary_writer.add_scalar('val/accuracy', float(accuracy), global_step=current_epoch)
+            
+            
         torch.save({
             'epoch': current_epoch + 1,
             'state_dict': model.state_dict(),
@@ -300,9 +325,9 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
     max_iters = conf["batches_per_epoch"]
     print("training epoch {}".format(current_epoch))
     model.train()
-    pbar = tqdm(enumerate(train_data_loader), total=max_iters, desc="Epoch {}".format(current_epoch), ncols=0)
+    pbar = tqdm(enumerate(train_data_loader), total=max_iters, desc="Running Epoch {}".format(current_epoch), ncols=0)
     if conf["optimizer"]["schedule"]["mode"] == "epoch":
-        scheduler.step(current_epoch)
+        scheduler.step()
     for i, sample in pbar:
         imgs = sample["image"].cuda()
         labels = sample["labels"].cuda().float()
@@ -346,7 +371,7 @@ def train_epoch(current_epoch, loss_functions, model, optimizer, scheduler, trai
         optimizer.step()
         torch.cuda.synchronize()
         if conf["optimizer"]["schedule"]["mode"] in ("step", "poly"):
-            scheduler.step(i + current_epoch * max_iters)
+            scheduler.step()
         if i == max_iters - 1:
             break
     pbar.close()
