@@ -49,7 +49,7 @@ def prepare_bit_masks(mask):
 
 
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor('/libs/shape_predictor_68_face_landmarks.dat')
+predictor = dlib.shape_predictor('libs/shape_predictor_68_face_landmarks.dat')
 
 
 def blackout_convex_hull(img):
