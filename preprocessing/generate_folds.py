@@ -13,6 +13,11 @@ import pandas as pd
 
 from tqdm import tqdm
 
+import os, sys
+root_folder = os.path.abspath(
+   os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+sys.path.append(root_folder)
 from preprocessing.utils import get_original_with_fakes
 
 import cv2
