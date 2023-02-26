@@ -15,7 +15,7 @@ from albumentations.pytorch.functional import img_to_tensor
 from scipy.ndimage import binary_erosion, binary_dilation
 from skimage import measure
 from torch.utils.data import Dataset
-import dlib
+# import dlib
 
 from training.datasets.validation_set import PUBLIC_SET
 
