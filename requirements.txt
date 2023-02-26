@@ -7,3 +7,5 @@ timm
 facenet_pytorch
 numpy
 torchvision
+pytorch_toolbelt
+pillow
