@@ -50,7 +50,7 @@ def process_videos(videos, root_dir, detector_cls: Type[VideoFaceDetector]):
 def main():
     args = parse_args()
     originals = get_original_video_paths(args.root_dir)
-    # process_videos(originals, args.root_dir, args.detector_type)
+    process_videos(originals, args.root_dir, args.detector_type)
 
 
 if __name__ == "__main__":

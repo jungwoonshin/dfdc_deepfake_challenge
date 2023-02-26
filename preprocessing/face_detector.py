@@ -14,7 +14,7 @@ cv2.setNumThreads(0)
 from PIL import Image
 from facenet_pytorch.models.mtcnn import MTCNN
 from torch.utils.data import Dataset
-
+import numpy as np
 
 class VideoFaceDetector(ABC):
 
@@ -39,6 +39,7 @@ class FacenetDetector(VideoFaceDetector):
 
     def _detect_faces(self, frames) -> List:
         batch_boxes, *_ = self.detector.detect(frames, landmarks=False)
+        batch_boxes = batch_boxes.astype(object)
         return [b.tolist() if b is not None else None for b in batch_boxes]
 
     @property

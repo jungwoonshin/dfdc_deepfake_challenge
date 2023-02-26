@@ -47,10 +47,10 @@ def save_landmarks(ori_id, root_dir):
             if os.path.exists(ori_path):
                 try:
                     image_ori = cv2.imread(ori_path, cv2.IMREAD_COLOR)[...,::-1]
-                    frame_img = Image.fromarray(image_ori)
+                    frame_img = Image.fromarray(image_ori,mode='RGB')
                     batch_boxes, conf, landmarks = detector.detect(frame_img, landmarks=True)
                     if landmarks is not None:
-                        landmarks = np.around(landmarks[0]).astype(np.int16)
+                        landmarks = np.around(landmarks[0].astype(np.float32)).astype(np.int16)
                         np.save(landmark_path, landmarks)
                 except Exception as e:
                     print(e)
