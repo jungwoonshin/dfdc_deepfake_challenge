@@ -75,6 +75,13 @@ def create_val_transforms(size=300):
 
 
 def main():
+    organization_name = "jungwoonshin"
+    project_name = "dfdc_deepfake_challenge"
+    vessl.configure(
+        organization_name=organization_name, 
+        project_name=project_name
+    )
+
     parser = argparse.ArgumentParser("PyTorch Xview Pipeline")
     arg = parser.add_argument
 #     python -u -m torch.distributed.launch --nproc_per_node=$NUM_GPUS --master_port 9901 training/pipelines/train_classifier.py \
