@@ -16,6 +16,11 @@ import cv2
 
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
+import os, sys
+root_folder = os.path.abspath(
+   os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+sys.path.append(root_folder)
 from preprocessing.utils import get_original_video_paths
 
 from PIL import Image
