@@ -50,7 +50,7 @@ class VideoReader:
         frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
         if frame_count <= 0: return None
 
-        frame_idxs = np.linspace(0, frame_count - 1, num_frames, endpoint=True, dtype=np.int)
+        frame_idxs = np.linspace(0, frame_count - 1, num_frames, endpoint=True, dtype=np.int32)
         if jitter > 0:
             np.random.seed(seed)
             jitter_offsets = np.random.randint(-jitter, jitter, len(frame_idxs))
@@ -201,55 +201,54 @@ class FaceExtractor:
         self.video_read_fn = video_read_fn
         self.detector = MTCNN(margin=0, thresholds=[0.7, 0.8, 0.8], device="cuda")
 
-    def process_videos(self, input_dir, filenames, video_idxs):
+    def process_videos(self, video_path):
         videos_read = []
         frames_read = []
         frames = []
         results = []
-        for video_idx in video_idxs:
+        # for video_idx in video_idxs:
             # Read the full-size frames from this video.
-            filename = filenames[video_idx]
-            video_path = os.path.join(input_dir, filename)
-            result = self.video_read_fn(video_path)
-            # Error? Then skip this video.
-            if result is None: continue
+            # filename = filenames[video_idx]
+            # video_path = os.path.join(input_dir, filename)
+            # result = self.video_read_fn(video_path)
+        result = self.video_read_fn(video_path)
+        # result = video
+        # Error? Then skip this video.
 
-            videos_read.append(video_idx)
+        # Keep track of the original frames (need them later).
+        my_frames, my_idxs = result
 
-            # Keep track of the original frames (need them later).
-            my_frames, my_idxs = result
+        frames.append(my_frames)
+        frames_read.append(my_idxs)
+        for i, frame in enumerate(my_frames):
+            h, w = frame.shape[:2]
+            img = Image.fromarray(frame.astype(np.uint8))
+            img = img.resize(size=[s // 2 for s in img.size])
 
-            frames.append(my_frames)
-            frames_read.append(my_idxs)
-            for i, frame in enumerate(my_frames):
-                h, w = frame.shape[:2]
-                img = Image.fromarray(frame.astype(np.uint8))
-                img = img.resize(size=[s // 2 for s in img.size])
+            batch_boxes, probs = self.detector.detect(img, landmarks=False)
 
-                batch_boxes, probs = self.detector.detect(img, landmarks=False)
+            faces = []
+            scores = []
+            if batch_boxes is None:
+                continue
+            for bbox, score in zip(batch_boxes, probs):
+                if bbox is not None:
+                    xmin, ymin, xmax, ymax = [int(b * 2) for b in bbox]
+                    w = xmax - xmin
+                    h = ymax - ymin
+                    p_h = h // 3
+                    p_w = w // 3
+                    crop = frame[max(ymin - p_h, 0):ymax + p_h, max(xmin - p_w, 0):xmax + p_w]
+                    faces.append(crop)
+                    scores.append(score)
 
-                faces = []
-                scores = []
-                if batch_boxes is None:
-                    continue
-                for bbox, score in zip(batch_boxes, probs):
-                    if bbox is not None:
-                        xmin, ymin, xmax, ymax = [int(b * 2) for b in bbox]
-                        w = xmax - xmin
-                        h = ymax - ymin
-                        p_h = h // 3
-                        p_w = w // 3
-                        crop = frame[max(ymin - p_h, 0):ymax + p_h, max(xmin - p_w, 0):xmax + p_w]
-                        faces.append(crop)
-                        scores.append(score)
-
-                frame_dict = {"video_idx": video_idx,
-                              "frame_idx": my_idxs[i],
-                              "frame_w": w,
-                              "frame_h": h,
-                              "faces": faces,
-                              "scores": scores}
-                results.append(frame_dict)
+            frame_dict = { #"video_idx": video_idx,
+                            "frame_idx": my_idxs[i],
+                            "frame_w": w,
+                            "frame_h": h,
+                            "faces": faces,
+                            "scores": scores}
+            results.append(frame_dict)
 
         return results
 
@@ -257,7 +256,7 @@ class FaceExtractor:
         """Convenience method for doing face extraction on a single video."""
         input_dir = os.path.dirname(video_path)
         filenames = [os.path.basename(video_path)]
-        return self.process_videos(input_dir, filenames, [0])
+        return self.process_videos(video_path)
 
 
 
@@ -302,11 +301,11 @@ def isotropically_resize_image(img, size, interpolation_down=cv2.INTER_AREA, int
     return resized
 
 
-def predict_on_video(face_extractor, video_path, batch_size, input_size, models, strategy=np.mean,
+def predict_on_video(face_extractor, video_path, videos, batch_size, input_size, models, strategy=np.mean,
                      apply_compression=False):
     batch_size *= 4
     try:
-        faces = face_extractor.process_video(video_path)
+        faces = face_extractor.process_video(videos)
         if len(faces) > 0:
             x = np.zeros((batch_size, input_size, input_size, 3), dtype=np.uint8)
             n = 0
@@ -322,7 +321,7 @@ def predict_on_video(face_extractor, video_path, batch_size, input_size, models,
                     else:
                         pass
             if n > 0:
-                x = torch.tensor(x, device="cuda").float()
+                x = torch.tensor(x, device="cpu").float()
                 # Preprocess the images.
                 x = x.permute((0, 3, 1, 2))
                 for i in range(len(x)):
@@ -331,7 +330,7 @@ def predict_on_video(face_extractor, video_path, batch_size, input_size, models,
                 with torch.no_grad():
                     preds = []
                     for model in models:
-                        y_pred = model(x[:n].half())
+                        y_pred = model(x[:n]) # 
                         y_pred = torch.sigmoid(y_pred.squeeze())
                         bpred = y_pred[:n].cpu().numpy()
                         preds.append(strategy(bpred))
@@ -346,14 +345,14 @@ def predict_on_video_set(face_extractor, videos, input_size, num_workers, test_d
                          strategy=np.mean,
                          apply_compression=False):
     def process_file(i):
-        filename = videos[i]
+        filename = videos
         y_pred = predict_on_video(face_extractor=face_extractor, video_path=os.path.join(test_dir, filename),
+                                  videos=videos,
                                   input_size=input_size,
                                   batch_size=frames_per_video,
                                   models=models, strategy=strategy, apply_compression=apply_compression)
         return y_pred
 
     with ThreadPoolExecutor(max_workers=num_workers) as ex:
-        predictions = ex.map(process_file, range(len(videos)))
+        predictions = ex.map(process_file, [1])
     return list(predictions)
-

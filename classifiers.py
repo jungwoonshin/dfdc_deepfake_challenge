@@ -9,8 +9,6 @@ from torch.nn.modules.dropout import Dropout
 from torch.nn.modules.linear import Linear
 from torch.nn.modules.pooling import AdaptiveAvgPool2d
 
-import vessl
-
 encoder_params = {
     "tf_efficientnet_b3_ns": {
         "features": 1536,
@@ -155,6 +153,9 @@ class DeepFakeClassifier(nn.Module):
         x = self.fc(x)
         return x
 
+
+
+
 class DeepFakeClassifierGWAP(nn.Module):
     def __init__(self, encoder, dropout_rate=0.5) -> None:
         super().__init__()
@@ -169,4 +170,3 @@ class DeepFakeClassifierGWAP(nn.Module):
         x = self.dropout(x)
         x = self.fc(x)
         return x
-

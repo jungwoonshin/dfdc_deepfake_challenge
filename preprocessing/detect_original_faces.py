@@ -7,25 +7,31 @@ from typing import Type
 from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
 
+import os, sys
+root_folder = os.path.abspath(
+   os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+sys.path.append(root_folder)
 from preprocessing import face_detector, VideoDataset
 from preprocessing.face_detector import VideoFaceDetector
 from preprocessing.utils import get_original_video_paths
 
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Process a original videos with face detector")
-    parser.add_argument("--root-dir", help="root directory")
+    parser.add_argument("--root-dir", default='dataset', help="root directory")
     parser.add_argument("--detector-type", help="type of the detector", default="FacenetDetector",
                         choices=["FacenetDetector"])
     args = parser.parse_args()
     return args
 
+def identity(x):
+    return x
 
 def process_videos(videos, root_dir, detector_cls: Type[VideoFaceDetector]):
     detector = face_detector.__dict__[detector_cls](device="cuda:0")
     dataset = VideoDataset(videos)
-    loader = DataLoader(dataset, shuffle=False, num_workers=cpu_count() - 2, batch_size=1, collate_fn=lambda x: x)
+    loader = DataLoader(dataset, shuffle=False, num_workers=cpu_count() - 2, batch_size=1, collate_fn=identity)
     for item in tqdm(loader):
         result = {}
         video, indices, frames = item[0]
@@ -44,7 +50,7 @@ def process_videos(videos, root_dir, detector_cls: Type[VideoFaceDetector]):
 def main():
     args = parse_args()
     originals = get_original_video_paths(args.root_dir)
-    process_videos(originals, args.root_dir, args.detector_type)
+    # process_videos(originals, args.root_dir, args.detector_type)
 
 
 if __name__ == "__main__":

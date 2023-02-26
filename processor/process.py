@@ -8,7 +8,7 @@ root_folder = os.path.abspath(
 sys.path.append(root_folder)
 from training.datasets.validation_set import PUBLIC_SET
 
-f = open("/home/jungwoon/github/dfdc_deepfake_challenge/processor/metadata.json")
+f = open("C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge/full_dataset/metadata.json")
 data = json.load(f)
 
 file_name_lst = []
@@ -42,13 +42,13 @@ print(len(new_dict_01))
 print(new_dict_02)
 print(len(new_dict_02))
 
-fp = open('/home/jungwoon/github/dfdc_deepfake_challenge/processor/sample_train_metadata.json', 'w')
+fp = open('C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge//processor/sample_train_metadata.json', 'w')
 json.dump(new_dict_01, fp)
-fp = open('/home/jungwoon/github/dfdc_deepfake_challenge/processor/sample_valid_metadata.json', 'w')
+fp = open('C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge//processor/sample_valid_metadata.json', 'w')
 json.dump(new_dict_02, fp)
 
 for key in new_dict_01.keys():
-    shutil.copyfile('/home/jungwoon/github/dfdc_deepfake_challenge/full_dataset/' + key, '/home/jungwoon/github/dfdc_deepfake_challenge/dataset/dfdc_train_001/' + key)
+    shutil.copyfile('C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge//full_dataset/' + key, 'C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge/dataset/dfdc_train_001/' + key)
 for key in new_dict_02.keys():
-    shutil.copyfile('/home/jungwoon/github/dfdc_deepfake_challenge/full_dataset/' + key, '/home/jungwoon/github/dfdc_deepfake_challenge/dataset/dfdc_train_001/' + key)
+    shutil.copyfile('C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge//full_dataset/' + key, 'C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge/dataset/dfdc_train_001/' + key)
     

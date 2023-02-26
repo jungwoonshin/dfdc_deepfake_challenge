@@ -51,12 +51,12 @@ for key in dic.keys():
 print(result)
 
 import json
-f = open("/home/jungwoon/github/dfdc_deepfake_challenge/processor/sample_valid_metadata.json")
+f = open("C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge/processor/sample_valid_metadata.json")
 valid_data = json.load(f)
-f = open("/home/jungwoon/github/dfdc_deepfake_challenge/processor/sample_train_metadata.json")
+f = open("C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge/processor/sample_train_metadata.json")
 train_data = json.load(f)
 
 train_data.update(valid_data)
 print(len(train_data))
-fp = open('/home/jungwoon/github/dfdc_deepfake_challenge/processor/combine_metadata.json', 'w')
+fp = open('C:/Users/user/Documents/GitHub/dfdc_deepfake_challenge/processor/combine_metadata.json', 'w')
 json.dump(train_data, fp)
