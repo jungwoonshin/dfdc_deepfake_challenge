@@ -9,5 +9,5 @@ numpy
 torchvision
 pytorch_toolbelt
 pillow
-cmake
-dlib
+# cmake
+# dlib
