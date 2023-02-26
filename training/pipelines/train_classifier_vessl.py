@@ -33,7 +33,7 @@ from albumentations import Compose, RandomBrightnessContrast, \
     HorizontalFlip, FancyPCA, HueSaturationValue, OneOf, ToGray, \
     ShiftScaleRotate, ImageCompression, PadIfNeeded, GaussNoise, GaussianBlur
 
-# from apex.parallel import DistributedDataParallel, convert_syncbn_model
+from apex.parallel import DistributedDataParallel, convert_syncbn_model
 from tensorboardX import SummaryWriter
 
 from apex import amp
