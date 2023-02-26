@@ -76,7 +76,7 @@ def create_val_transforms(size=300):
 
 def main():
     organization_name = "jungwoonshin"
-    project_name = "dfdc_deepfake_challenge"
+    project_name = "deepfake-detection"
     vessl.configure(
         organization_name=organization_name, 
         project_name=project_name
@@ -280,7 +280,7 @@ def evaluate_val(args, data_val, bce_best, model, snapshot_name, current_epoch, 
             bce_best = bce
             with open("predictions_{}.json".format(args.fold), "w") as f:
                 json.dump({"probs": probs, "targets": targets}, f)
-            summary_writer.add_scalar('val/accuracy', float(accuracy), global_step=current_epoch)
+            # summary_writer.add_scalar('val/accuracy', float(accuracy), global_step=current_epoch)
             
         torch.save({
             'epoch': current_epoch + 1,
