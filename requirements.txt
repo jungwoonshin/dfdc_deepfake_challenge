@@ -1,13 +1,13 @@
-# opencv-python
-# --extra-index-url https://download.pytorch.org/whl/cu113
-# torch
-# albumentations
-# gradio
-# timm
-# facenet_pytorch
-# numpy
-# torchvision
-# pytorch_toolbelt
-# pillow
+opencv-python
+--extra-index-url https://download.pytorch.org/whl/cu113
+torch
+albumentations
+gradio
+timm
+facenet_pytorch
+numpy
+torchvision
+pytorch_toolbelt
+pillow
 cmake
 dlib
